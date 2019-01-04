@@ -14,7 +14,8 @@ class Siamese(nn.Module):
         self.pool2 = nn.MaxPool2d((4, 3), (4, 3))#4x3 -> 5x5
         self.conv3 = nn.Conv2d(45, 250, 5, 1)#250, 5x5 -> 1x1x250
 
-        self.fully = nn.Linear(250, 50)#num_unit=50
+        self.fully = nn.Linear(250, 100)#num_unit=50
+        self.linear1 = nn.Linear(100, 50)
         self.linear2 = nn.Linear(50, 2)
         
         self.feature_map = nn.Sequential(
@@ -43,7 +44,7 @@ class Siamese(nn.Module):
         x = x.view(x.size(0), 250)
         #x = nn.Dropout()(x)
         x = self.fully(x)
-
+        x = self.linear1(x)
         return x
 
     def forward(self, x1, x2):

@@ -27,7 +27,7 @@ def evaluate(dataset, model):
 
 from aug_data import soft_aug 
 if __name__ == "__main__":
-    subject_imgs = load_imgs()
+    subject_imgs = load_imgs(3)
     train, test = split_subjects(subject_imgs, 35)
 
     #create train pairs
@@ -36,9 +36,9 @@ if __name__ == "__main__":
 
     impostor_pairs, impos_labels = create_impostor_pairs(train)
     impo_pairs_test, impo_labels_test = create_impostor_pairs(test)
-    impostor_pairs, impos_labels = shuffle(impostor_pairs, impos_labels)
+    #impostor_pairs, impos_labels = shuffle(impostor_pairs, impos_labels)
 
-    pair_datas, labels = shuffle_data(genuine_pairs, gen_labels, impostor_pairs[:5000], impos_labels[:5000])
+    pair_datas, labels = shuffle_data(genuine_pairs, gen_labels, impostor_pairs, impos_labels)
     pair_data_test, labels_test = shuffle_data(gen_pairs_test, gen_labels_test, impo_pairs_test, impo_labels_test)
 
     dataset = SiameseData(subject_imgs, pair_datas, labels, None)

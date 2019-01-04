@@ -6,20 +6,27 @@ import os
 from torch.utils.data import Dataset, DataLoader 
 from torchvision import transforms 
 import random
+from aug_data import soft_aug 
 
 top_dir = "orl_faces"
 subject_names = [i for i in os.listdir(top_dir) if os.path.isdir(top_dir+"/"+i)]
 
-def load_imgs():
+def load_imgs(num_aug=None):
 
     subject_imgs = [None]*len(subject_names) #list consist of all face data of each subject
 
     for idx, i in enumerate(subject_names):
         imgs = [] 
         for j in os.listdir(top_dir+'/'+i):
-            imgs.append(cv2.resize(cv2.imread(top_dir+'/'+i+'/'+j, -1), (46, 56)))
+            origin_img = cv2.imread(top_dir+'/'+i+'/'+j, -1)
+            imgs.append(cv2.resize(origin_img, (46, 56)))
+        
+            if num_aug is not None and idx < 35:
+                for k in range(num_aug):
+                    distorted_img = soft_aug(origin_img)
+                    imgs.append(cv2.resize(distorted_img, (46, 56)))
 
-        subject_imgs[idx] = imgs
+        subject_imgs[idx] = imgs 
 
     return subject_imgs 
 
@@ -48,7 +55,7 @@ def create_genuine_pairs(subject_imgs):
     labels = [0]*len(genuine_pairs)
     return genuine_pairs, labels
 
-def create_impostor_pairs(subject_imgs):
+def create_impostor_pairs(subject_imgs, num_visible_img=10):
     impostor_pairs = [] 
     labels = [] 
 
@@ -56,8 +63,11 @@ def create_impostor_pairs(subject_imgs):
         for subject_idx2, imgs2 in enumerate(subject_imgs):
 
             if subject_idx1 < subject_idx2:
-                for img_idx1 in range(len(imgs1)):
-                    for img_idx2 in range(len(imgs2)):
+
+                range_imgs1 = len(imgs1) if num_visible_img is None else num_visible_img 
+                range_imgs2 = len(imgs2) if num_visible_img is None else num_visible_img 
+                for img_idx1 in range(range_imgs1):
+                    for img_idx2 in range(range_imgs2):
                         tmp = [AddressImg(subject_idx1, img_idx1), AddressImg(subject_idx2, img_idx2)]
                         impostor_pairs.append(tmp)
     labels = [1]*len(impostor_pairs)
@@ -106,7 +116,7 @@ def shuffle_data(genuine_pairs, gen_labels, impostor_pairs, impos_labels):
     return pair_datas, labels 
 
 if __name__ == "__main__":
-    subject_imgs = load_imgs()
+    subject_imgs = load_imgs(3)
     print(len(subject_imgs))
     print(len(subject_imgs[0]))
     train, test = split_subjects(subject_imgs, 35)

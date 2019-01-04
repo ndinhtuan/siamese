@@ -43,9 +43,19 @@ def soft_aug(imgs):
                 iaa.MedianBlur(k=(3,5)),
                 iaa.AdditiveGaussianNoise(scale=0.05*255),
                 iaa.GaussianBlur(sigma=(0.4, 0.7)),
-                iaa.Add(value=(-40, 40), per_channel=0.5)
-                ])]
-            )
+                iaa.Add(value=(-40, 40), per_channel=0.5),
+                iaa.Affine(scale={"x": (0.8, 1.2), "y": (0.8, 1.2)}, translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)} , rotate=(-3, 3), shear=(-5, 5))])
+            ])
     
     return aug.augment_image(imgs)
 
+if __name__ == "__main__":
+
+    img = cv2.imread("orl_faces/s1/1.pgm")
+
+    while True :
+        tmp = soft_aug(img)
+        horizontal_concat = np.hstack((img, tmp))
+        cv2.namedWindow("demo", cv2.WINDOW_NORMAL)
+        cv2.imshow("demo", horizontal_concat)
+        cv2.waitKey(0)
