@@ -4,6 +4,16 @@ from model import Siamese, SiameseLoss
 import torch 
 import numpy as np
 import random 
+import torch.cuda as cuda 
+import cv2 
+
+has_gpu = cuda.is_available()
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") 
+
+if has_gpu:
+    print("Found gpu")
+else:
+    print("Not found gpu")
 
 def shuffle(datas, labels):
     
@@ -14,13 +24,28 @@ def shuffle(datas, labels):
     return [i[0] for i in combine], [i[1] for i in combine]
 
 def evaluate(dataset, model):
+    model.eval()
     right = 0
     num = 0
 
     for i, ((i1, i2), l) in enumerate(dataset):
+
+        if has_gpu:
+            i1 = torch.autograd.Variable(i1.type(torch.FloatTensor)).cuda()
+            i2 = torch.autograd.Variable(i2.type(torch.FloatTensor)).cuda()
+            l = torch.autograd.Variable(l).cuda()
+
         pred = model(i1, i2)
+        p = np.argmax(pred.cpu().detach().numpy(), axis=1)
+        print p
+        ret = None 
+        for ii, tmp in enumerate(p):
+
+            if tmp == 4:
+                t = np.hstack((i1[ii].cpu().detach().numpy(), i2[ii].cpu().detach().numpy()))
+                cv2.imwrite("img/{}_{}.jpg".format(i, ii), t)
         num += l.size(0)
-        right += (sum(np.argmax(pred.detach().numpy(), axis=1) == l).type(torch.FloatTensor)/l.size(0)).item()
+        right += (sum(np.argmax(pred.cpu().detach().numpy(), axis=1) == l).type(torch.FloatTensor)).item()
         print "Acc test: {}".format(right*1.0/num)
 
     print "Acc test: {}".format(right*1.0/num)
@@ -37,10 +62,15 @@ if __name__ == "__main__":
     impostor_pairs, impos_labels = create_impostor_pairs(train)
     impo_pairs_test, impo_labels_test = create_impostor_pairs(test)
     #impostor_pairs, impos_labels = shuffle(impostor_pairs, impos_labels)
+    print len(genuine_pairs), len(impostor_pairs)
+    #exit()
 
     pair_datas, labels = shuffle_data(genuine_pairs, gen_labels, impostor_pairs, impos_labels)
     pair_data_test, labels_test = shuffle_data(gen_pairs_test, gen_labels_test, impo_pairs_test, impo_labels_test)
-
+    
+    l = len(pair_datas) 
+    idx = l - 3200
+    #:exit()
     dataset = SiameseData(subject_imgs, pair_datas, labels, None)
     dataset_test = SiameseData(subject_imgs, pair_data_test, labels_test, None)
     dataloader = DataLoader(dataset, batch_size=32)
@@ -51,12 +81,22 @@ if __name__ == "__main__":
     loss = torch.nn.CrossEntropyLoss()
     #optim = torch.optim.Adam(model.parameters())
     optim = torch.optim.SGD(model.parameters(), lr = 0.001, momentum=0.9)
+    if has_gpu:
+        print("Push model to gpu")
+        model.cuda()
+        loss.cuda()
 
     for i, ((i1, i2), l) in enumerate(dataloader):
-
+        
+        model.train() 
+        if has_gpu:
+            i1 = torch.autograd.Variable(i1.type(torch.FloatTensor)).cuda()
+            i2 = torch.autograd.Variable(i2.type(torch.FloatTensor)).cuda()
+            l = torch.autograd.Variable(l).cuda() 
+        
         pred = model(i1, i2)
-        print(np.argmax(pred.detach().numpy(), axis=1), l)
-        print("Acc: ", sum(np.argmax(pred.detach().numpy(), axis=1) == l).type(torch.FloatTensor)/l.size(0))
+        print(np.argmax(pred.cpu().detach().numpy(), axis=1), l)
+        print("Acc: ", sum(np.argmax(pred.cpu().detach().numpy(), axis=1) == l).type(torch.FloatTensor)/l.size(0))
         _loss = loss(pred, l)
         print _loss.item()
         optim.zero_grad()

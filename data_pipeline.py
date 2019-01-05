@@ -21,7 +21,7 @@ def load_imgs(num_aug=None):
             origin_img = cv2.imread(top_dir+'/'+i+'/'+j, -1)
             imgs.append(cv2.resize(origin_img, (46, 56)))
         
-            if num_aug is not None and idx < 35:
+            if num_aug is not None and idx < 40:
                 for k in range(num_aug):
                     distorted_img = soft_aug(origin_img)
                     imgs.append(cv2.resize(distorted_img, (46, 56)))

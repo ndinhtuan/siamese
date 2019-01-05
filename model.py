@@ -32,7 +32,7 @@ class Siamese(nn.Module):
     def forward1(self, x):
         x = torch.unsqueeze(x,1)
         #print(x.size(), x.dtype)
-        x = x.type(torch.FloatTensor)
+        #x = x.type(torch.FloatTensor)
         x = self.conv1(x)
         x = nn.ReLU()(x) 
         x = self.pool1(x)
