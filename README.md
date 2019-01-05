@@ -1,5 +1,4 @@
 ## To-Do
-1. Augument data for same category data
 
 ## Done
 1. Preprocessing data 
@@ -7,3 +6,4 @@
 3. Write Model 
 4. Write Loss 
 5. Train 
+6. Augument data for same category data
